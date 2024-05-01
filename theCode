@@ -1,0 +1,222 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+                                                                            //structure for retaining a date
+struct date
+{
+    int day;                                                                // the day, the month and the year are integers
+    int month;
+    int year;
+};
+                                                                            //structure for retaining the details of the product
+struct product
+{
+    char type[20];                                                          //type of product
+    char name[20];                                                          //name of the product
+    float price;                                                            //price
+    int soldProducts;                                                       //number of sold pieces
+    int productsInStock;                                                    //number of pieces in stock
+    struct date *expDate;                                                   //expiration date
+                                                                            //if it does not exist it will be null
+} products[5000];
+int numOfProd=0, numOfTypes=0;                                                //number of products and the number of types already registered
+char *types[100];                                                          //table of pointers for memorizing the names of the types
+                                                                            //verifies if the type sent through the parameter already exists returns 1 if yes and 0 if not
+int typeExists(char type[20])
+{
+    for(int i=0; i<numOfTypes; i++)                                         //checks the table with the names of the types
+        if(strcmp(type, types[i])==0)                                       //if the strings correspond it means that the type already exists
+            return 1;
+    return 0;
+}
+                                                                            //function for reading a date
+void getDate(struct date *d)                                                //the pointer e used to point the addresses of the variables from the "date" structure
+{
+    char separator;                                                         //used to read the character between the numbers that form date
+    printf("Expiration date: (dd-mm-yyyy)");                                 //prints out the date format
+    scanf("%d%c%d%c%d", &d->day, &separator, &d->month, &separator, &d->year);  //reads from the keyboard integers that are attributed to the variables form the "date" structure
+}
+                                                                            //function that prints a given date
+void showDate(struct date *d)
+{
+                                                                            //format dd/mm/yyyy
+    printf("\tExpiration date: %d/%d/%d\n", d->day, d->month, d->year);
+}
+                                                                            //function used to read the details of a product
+void getProduct(struct product *p)                                         //pointer used for pointing to the addresses of the variables from the "date" structure
+{
+    printf("->Adding a product\n");                                         //prints out the choice
+    printf("Type: ");
+    scanf("%s", &p->type);                                                 //gets input the type
+    if(typeExists(p->type)==0)                                                //verifies if the product already exists
+    {
+                                                                                    //if not, a new type is created
+                                                                                    //the 'numOfTypes' position is the first free position because the index starts form 0
+        types[numOfTypes] = (char*)malloc(20*sizeof(char));                 //we allocate the required space to register the name of the type
+        strcpy(types[numOfTypes], p->type);                          //copy the name of the type in the table
+        numOfTypes++;                                                           //the number of types is incremented
+    }
+    printf("Name: ");
+    scanf("%s", &p->name);                                                      //name of product
+    printf("Price: ");
+    scanf("%f", &p->price);                                                     //price
+    printf("Stock: ");
+    scanf("%d", &p->productsInStock);                                           //stock
+    printf("Sold pieces: ");
+    scanf("%d", &p->soldProducts);                                        //sold pieces
+    printf("Does it have an expiration date? (y/n)");                       //some product don't have an expiration date
+    char opt;                                                               //choice (y=yes, n=no)
+    int ok=0;                                                               //ok = 0 as long as the user gives invalid input
+    while(ok==0)
+    {
+        scanf("%c", &opt);                                                  // '\n'
+        scanf("%c", &opt);                                                  //option
+        if(opt=='n')                                                        //if it doesn't have an expiration date then it gets 'null'
+        {
+            ok=1;                                                           //the input is valid, loop escape
+            p->expDate=NULL;
+        }
+        else if(opt=='y')                                                   //if it does have an expiration date it appeals the 'citireData()' function
+        {
+            ok=1;                                                           //the input is valid, loop escape
+            getDate(&p->expDate);
+        }
+        else                                                                //input != 'y' and 'n'
+            printf("Invalid input...\n");
+    }
+}
+                                                                            //showing the details of the product
+                                                                            //if the product has an expiration date this will be outputed too
+void showProduct(struct product *p)
+{
+    printf("\tName: %s\n", p->name);
+    printf("\tPrice: %.2f $\n", p->price);
+    printf("\tStock: %d\n", p->productsInStock);
+    printf("\tSold: %d\n", p->soldProducts);
+    if(p->expDate!=NULL)
+        showDate(&p->expDate);
+}
+                                                                            //function that returns the position of a product in the table or -1 value if it does not exist
+int searchProduct(char name[20])
+{
+    for(int i=0; i<numOfProd; i++)
+        if(strcmp(name, products[i].name)==0)
+            return i;
+    return -1;
+}
+                                                                            //in the case of selling a product, the name and the quantity  will be specified
+                                                                            //then the name of the product will be searched in the whole table of stock
+                                                                            //we verify if the stock is big enough to complete the transaction.
+                                                                            //if yes, the number of sold pieces will be increased and the stock decreased
+void buy()
+{
+    char name[20];
+    int i;
+    printf("Name of the product you want to sell: ");
+    scanf("%s", name);
+    i=searchProduct(name);                                                  //search for the product
+    if(i==-1)                                                               //if it does not exist  a message will be printed
+    {
+        printf("The product does not exist\n");
+        return;
+    }
+    int numPieces;
+    printf("Number of sold pieces:");
+    scanf("%d", &numPieces);
+    if(products[i].productsInStock<numPieces)                                   //if the stock is not sufficient for a transaction a message will be shown to the user and no changes will be made to the stock
+    {
+        printf("Insufficient stock... no changes made...\n");
+        return;
+    }
+    products[i].productsInStock-=numPieces;                                     //we increase the number of the sold pieces and reduce the number in stock
+    products[i].soldProducts+=numPieces;
+}
+                                                                                //if we want to refill the stock the name of the product will be read and the quantity we want to add
+
+
+void bringStock()
+{
+    char name[20];
+    int i;
+    printf("Name of the product we refill the stock for: ");
+    scanf("%s", name);
+    i=searchProduct(name);
+    if(i==-1)                                                               //if it does not exist a message appear
+    {
+        printf("Product does not exist...\n");
+        return;
+    }
+    int numPieces;
+    printf("Number of pieces brought in stock:");
+    scanf("%d", &numPieces);
+    products[i].productsInStock+=numPieces;                                     //we increase the number of products in stock
+}
+                                                                            //function that shows the whole inventory with the type as categories
+void getStock()
+{
+    for(int i=0; i<numOfTypes; i++)                                           //we search trough every type
+    {
+        printf("%s:\n", types[i]);                                         //current type
+        for(int j=0; j<numOfProd; j++)                                      //all the products
+        {
+            if(strcmp(products[j].type, types[i])==0)                        //all the products from the current type
+            {
+                showProduct(&products[j]);
+                printf("\n");
+            }
+        }
+        printf("----------------------------------\n");
+    }
+}
+                                                                            //function that prints all the types
+void getTypes()
+{
+    for(int i=0; i<numOfTypes; i++)
+        printf("%s\n", types[i]);
+}
+                                                                            //shows the option menu
+void getMenu()
+{
+    printf("0.EXIT\n");
+    printf("1.Show the types\n");
+    printf("2.Add a new product\n");
+    printf("3.Show the current stock\n");
+    printf("4.Sell a product\n");
+    printf("5.New stock\n");
+}
+int main()
+{
+    int opt;
+    do
+    {
+        getMenu();
+        printf("choice:");
+        scanf("%d", &opt);
+        printf("**********************************\n");
+        switch(opt)
+        {
+            case 1:
+                getTypes();
+                break;
+            case 2:
+                getProduct(&products[numOfProd++]);
+                break;
+            case 3:
+                getStock();
+                break;
+            case 4:
+                buy();
+                break;
+            case 5:
+                bringStock();
+                break;
+            case 0:                         //'exit'
+                return 0;
+            default:
+                printf("Invalid input\n");
+        }
+        printf("**********************************\n");
+    }
+    while(1); //looping until opt==0
+
+}
